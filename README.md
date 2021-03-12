@@ -3,7 +3,7 @@ Multi-Heuristic A* Algorithms (IMHA and SMHA) for N-queens problem
 
 Heuristic usage and calls to imha and smha are internal to code.
 
-New problem domain can be implemented with new planner and state, but imha should be updated to reflect the possibility of reaching new states with lower cost within a given Open,i queue.
+New problem domain can be implemented with new planner and state, but imha should be updated to reflect the possibility of reaching same state with lower cost within a given Open,i queue.
 
 N-Queens Problem: Fill an NxN grid columnwise with N queens such that they do not attack each other (share diagonal, column, or row).
 
