@@ -332,22 +332,21 @@ def h_mean_dist_local(state):
   return dist/(nq-1)
   
 def h_open_squares(state):
-  return 0
-  # always the same (one row one column), n diagonal squares?
+#  return 0
 
-#  # Open squares can only occur after nq (all prev columns blocked)
-#  # Dumb implementation... loops through all squares after nq
-#  qs = state.qs
-#  nq = state.nq
-#  n = state.n
-#  squares = [[0]*n for i in range(n)]
-#  for i in range(nq):
-#    # block row, up diag, down diag
-#    for c in range(nq,n):
-#      squares[i][c] = 1
-      
-    
-    
+  # Open squares can only occur after nq (all prev columns blocked)
+  # Dumb implementation... loops through all squares after nq
+  qs = state.qs
+  nq = state.nq
+  n = state.n
+  squares = [[0]*n for i in range(n)]
+  for i in range(nq):
+    # block row, up diag, down diag
+    for c in range(nq,n):
+      squares[qs[i]][c] = 1 # row
+      if qs[i]+(c-i) < n-1: squares[qs[i]+(c-i)][c] = 1 # upward diag
+      if qs[i]-(c-i) > -1 : squares[qs[i]-(c-i)][c] = 1 # downward diag
+
   cnt = 0
   for c in range(nq,n):
     for r in range(n):
