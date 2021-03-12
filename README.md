@@ -10,6 +10,6 @@ N-Queens Problem: Fill an NxN grid columnwise with N queens such that they do no
 A* setting: give heuristic value to each state (valid placement of some number of queens on the board).
 Action takes a state with x queens placed in columns 0 .. x-1, and places a queen in column x.
 
-'''
+```bash
 > python mhastar.py -n 10
-'''
+```
