@@ -13,6 +13,7 @@ class bcolors:
     OKRED = '\033[91m'
     ENDC = '\033[0m'
 
+# PQNode and PQ from Gen AI Hw 1
 class PQNode:
     
     def __init__(self, state, path, cost_from_start):
