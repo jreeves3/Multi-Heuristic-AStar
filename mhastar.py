@@ -3,7 +3,7 @@
 # algorithms from paper Multi-Heuristic A*, Sandip Aine, et al., ijrr (2015)
 
 # Run e.g.,
-# > python3 nqueens.py -n 8
+# > python3 nqueens.py -n 8 -t 0
 
 import sys
 import getopt
@@ -22,7 +22,7 @@ class PQNode:
         self.g = cost_from_start
 
     def __gt__(self, other_node):
-        return self.state.nq > other_node.state.nq
+        return self.state.nq > other_node.state.nq # problem specific implementation!!
 
 class PriorityQueue:
 
@@ -224,8 +224,8 @@ class smha:
 # State stores information for a given problem (Constructor used in respective planner)
 class state:
   nq = None   #number of queens placed
-  qs =None  #position of queens placed (by column) (redundant with path...)
-  n = None
+  qs = None   #position of queens placed (by column) (redundant with path...)
+  n =  None
   def __init__(self,nq,qs,n):
     self.qs = []
     for i in range(nq):
@@ -258,7 +258,7 @@ class nqueens:
   def is_goal(self,state):
     return state.nq == self.n
     
-  def cost(self,s1,s2): return 1
+  def cost(self,s1,s2): return 1 # cost 1 to place queen
     
   def succ(self,s):
     qs = s.qs
@@ -282,7 +282,8 @@ def h0(state):
   nq = state.nq
   n = state.n
   return n - nq
-  
+
+# For test 1 showing case where SMHA worse than IMHA
 def h1(state):
   qs = state.qs
   nq = state.nq
@@ -306,32 +307,112 @@ def h2(state):
     if qs[i] == sol[i]: h+=.2 # stronger decrease
   return n - nq - h
   
+# Presentation Heuristics:
+# Need to be weighted appropriately so heuristics are similar
+# with each other and with the anchor (whatever that might be)
+
+# Distance from previously placed queen
+def h_local_dist(state):
+  qs = state.qs
+  nq = state.nq
+  n = state.n
+  if nq == 1: return n - nq # only 1 queen
+  pos_prev = qs[nq-2]
+  pos_curr = qs[nq-1]
+  return abs(pos_prev-pos_curr)+1
+  
+def h_mean_dist_local(state):
+  qs = state.qs
+  nq = state.nq
+  n = state.n
+  if nq == 1: return n - nq # only 1 queen
+  dist = 0
+  for i in range(nq-1):
+    dist += abs(qs[i+1]-qs[i])+1
+  return dist/(nq-1)
+  
+def h_open_squares(state):
+  return 0
+  # always the same (one row one column), n diagonal squares?
+
+#  # Open squares can only occur after nq (all prev columns blocked)
+#  # Dumb implementation... loops through all squares after nq
+#  qs = state.qs
+#  nq = state.nq
+#  n = state.n
+#  squares = [[0]*n for i in range(n)]
+#  for i in range(nq):
+#    # block row, up diag, down diag
+#    for c in range(nq,n):
+#      squares[i][c] = 1
       
+    
+    
+  cnt = 0
+  for c in range(nq,n):
+    for r in range(n):
+      if squares[r][c] == 0: cnt += 1
+  return cnt
+  
+def h_mean_dist_all(state):
+  qs = state.qs
+  nq = state.nq
+  n = state.n
+  if nq == 1: return n - nq # only 1 queen
+  dist = 0
+  cnt = 0
+  for i in range(nq-1):
+    for j in range(i+1,nq):
+      cnt += 1
+      dist += abs(qs[j]-qs[i])+abs(j - i) # vert + hoiz distance
+  return dist/cnt
+
+    
 def run(name, args):
     n = None
-    optlist, args = getopt.getopt(args, "n:")
+    t = 0 # Test 
+    optlist, args = getopt.getopt(args, "n:t:")
     for (opt, val) in optlist:
         if opt == '-n':
             n = int(val)
-    w1 = 1
-    w2 = 1
-    
-    nq = nqueens(n)
-    solve = imha(nq,h0,[h1,h2],w1,w2)
-    sol = solve.search(nq.start())
-    nq.print(sol)
-    print(solve.cnt)
-    
-    nq = nqueens(n)
-    solve = smha(nq,h0,[h1,h2],w1,w2)
-    sol = solve.search(nq.start())
-    nq.print(sol)
-    print(solve.cnt)
+        elif opt == '-t':
+            t = int(val)
+    if t == 0:
+      w1 = 1
+      w2 = 1
+      
+      nq = nqueens(n)
+      solve = imha(nq,h0,[h1,h2],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+      
+      nq = nqueens(n)
+      solve = smha(nq,h0,[h1,h2],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+    elif t == 1:
+      # heuristic test (n=8)
+      s1 = state(1, [0] + [-1]*7, 8)
+      s2 = state(2, [0,5] + [-1]*6, 8)
+      s3 = state(3, [0,5,3] + [-1]*6, 8)
+      print("s1 [0] h_local_dist {} h_mean_dist_local {} h_open_square {} h_mean_dist_all {} ".\
+        format(h_local_dist(s1), h_mean_dist_local(s1), h_open_squares(s1), h_mean_dist_all(s1)))
+      print("s2 [0,5] h_local_dist {} h_mean_dist_local {} h_open_square {} h_mean_dist_all {} ".\
+        format(h_local_dist(s2), h_mean_dist_local(s2), h_open_squares(s2), h_mean_dist_all(s2)))
+      print("s3 [0,5,3] h_local_dist {} h_mean_dist_local {} h_open_square {} h_mean_dist_all {} ".\
+        format(h_local_dist(s3), h_mean_dist_local(s3), h_open_squares(s3), h_mean_dist_all(s3)))
+      
+      
+    # Additional Tests here...
+    # elif t == 2:
 
 if __name__ == "__main__":
     run(sys.argv[0], sys.argv[1:])
 
 # Stats - number of rounds printed after solution (can add counter and timers)
 
+# Test 1
 # Given example: IMHA 2xs better
 # SMHA wants to splice both paths (see heuristics) which leads to less efficient solve time...
