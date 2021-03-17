@@ -243,14 +243,16 @@ class nqueens:
   
   def print(self,qs):
       print(qs)
+      print(" ")
       for r in range(self.n):
           line = " "
           # Print horizontal dominos
           for c in range(self.n):
-              if qs[c] == r: line += bcolors.OKRED + "X" + bcolors.ENDC
-              else: line += " "
+              if qs[c] == r: line += bcolors.OKRED + "\u265B" + bcolors.ENDC
+              else: line += "\u2610"
               line += " "
           print(line)
+      print(" ")
 
   def start(self):
     return state(0,[-1]*self.n,self.n)
@@ -404,8 +406,38 @@ def run(name, args):
         format(h_local_dist(s3), h_mean_dist_local(s3), h_open_squares(s3), h_mean_dist_all(s3)))
       
       
-    # Additional Tests here...
-    # elif t == 2:
+    # Additional Tests here... T-2 Shows that SMHA cannot even find a solution
+    elif t == 2:
+      w1 = 1
+      w2 = 1
+      
+      nq = nqueens(n)
+      solve = imha(nq,h0,[h_local_dist,h_mean_dist_local],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+      
+      nq = nqueens(n)
+      solve = smha(nq,h0,[h_local_dist,h_mean_dist_local],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+    elif t == 3:
+      w1 = 1
+      w2 = 1
+      
+      nq = nqueens(n)
+      solve = imha(nq,h0,[h_local_dist,h_open_squares],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+      
+      nq = nqueens(n)
+      solve = smha(nq,h0,[h_local_dist,h_open_squares],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+
 
 if __name__ == "__main__":
     run(sys.argv[0], sys.argv[1:])
