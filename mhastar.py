@@ -30,9 +30,10 @@ class PriorityQueue:
         self.elements = []
         
     def top(self): # Questionable - elements may not be a heap
-      (k,s) = heappop(self.elements)
-      heappush(self.elements, (k,s))
-      return (k,s)
+#      (k,s) = heappop(self.elements)
+#      self.push(s,k)
+#      return (k,s)
+      return self.elements[0]
     
     def nonempty(self):
         return bool(self.elements)
@@ -41,7 +42,9 @@ class PriorityQueue:
         heappush(self.elements, (priority, element))
         
     def push_update(self,element,priority):
-        fnd = [(p,e) for p,e in self.elements if e.state==element.state]
+        fnd = [(p,e) for p,e in self.elements if element.state.isEq(e.state)]
+#        print(len(fnd))
+#        print(self.contains(element))
         if len(fnd) > 0: self.elements.remove((fnd[0][0],fnd[0][1]))
         self.push(element,priority)
 
@@ -50,9 +53,13 @@ class PriorityQueue:
     
     def contains(self, state):
         return any(
-            element.state == state
+            element.state.isEq(state.state)
             for priority, element in self.elements
         )
+    
+    def findremove(self,element):
+      fnd = [(p,e) for p,e in self.elements if element.state.isEq(e.state)]
+      if len(fnd) > 0: self.elements.remove((fnd[0][0],fnd[0][1]))
 
 class imha:
   hs = []
@@ -79,7 +86,7 @@ class imha:
     return g + self.w1 * h
     
   def expand(self,s,i):
-    succ = self.p.succ(s.state)
+    succ = self.p.succ(s.state,i)
     closed = []
     heap = []
     g_s = s.g
@@ -95,7 +102,7 @@ class imha:
       h = self.hs[i]
     for (newS,action) in succ:
       insert = False
-      if newS in closed: continue
+      if newS.qs in closed: continue
       # Cost meaningless for N-Queens so this part of alg ignored...
       # i.e., can never reach a state with shorter cost g, always exact same cost
       # and only one way to reach it...
@@ -130,7 +137,7 @@ class imha:
           else: # Expand open,i
             s = self.hqs[i].pop()
             self.expand(n,i)
-            self.closed[i].append(n.state)
+            self.closed[i].append(n.state.qs)
         else:
           if self.p.is_goal(n0.state): # anchor has path to goal
             print('Anchor')
@@ -139,7 +146,7 @@ class imha:
 #            self.cnt+=1
             s = self.h0q.pop()
             self.expand(n0,-1)
-            self.closed0.append(n0.state)
+            self.closed0.append(n0.state.qs)
 
 
 class smha:
@@ -155,34 +162,38 @@ class smha:
   closed0 = []
   cnt = 0
   g = []
+  verbose = False
 #  g0 ={} # g-values in lookup dictionary, state -> g-value
 #  gis = {}
   
-  def __init__(self, planner, anchor, heuritics,w1,w2):
+  def __init__(self, planner, anchor, heuritics,w1,w2, verbose=False):
     self.p  = planner
     self.h0 = anchor
     self.nh = len(heuritics)
     self.hs = heuritics
     self.w1 = w1
     self.w2 = w2
+    self.verbose = verbose
     
   def key(self,g,h):
     return g + self.w1 * h
     
-  def expand(self,s):
-    succ = self.p.succ(s.state)
+  def expand(self,s,hi):
+    # remove s from open i for all i
+    for i in range(self.nh) : self.hqs[i].findremove(s)
+    succ = self.p.succ(s.state,hi)
     g_s = s.g
     p = s.path
     for (newS,action) in succ:
       p_newS = p[:] + [action]
       if p_newS not in self.g:
         self.g.append(p_newS)
-        if not newS in self.closed0:
+        if not newS.qs in self.closed0:
           g_newS = g_s + self.p.cost(s,newS)
           key_newS = self.key(g_s+1,self.h0(newS))
           p_newS = p[:] + [action]
           self.h0q.push_update(PQNode(newS,p_newS,g_newS),key_newS)
-          if not newS in self.closedi:
+          if not newS.qs in self.closedi:
             for i in range(self.nh):
               if self.key(g_s+1,self.hs[i](newS)) <= self.key(g_s+1,self.h0(newS)) :
                 key_newS = self.key(g_s+1,self.hs[i](newS))
@@ -200,25 +211,47 @@ class smha:
     
     while self.h0q.nonempty: #no check for infinity in N-Queens space
       self.cnt+=1
-      if self.cnt > 9000: print("AHHH")
       for i in range(self.nh):
-        (k,n) = self.hqs[i].top()
-        (k0,n0) = self.h0q.top()
-        if k <= self.w2 * k0:
-          if self.p.is_goal(n.state): # open,i has path to goal
-            return n.path
-          else: # expand open,i
-            s = self.hqs[i].pop()
-            self.expand(n)
-            self.closedi.append(n.state)
-        else:
+        if not self.hqs[i].nonempty():
+          if self.verbose: print("Expand Empty Anchor")
+          (k0,n0) = self.h0q.top()
+          if self.verbose:print(n0.path)
           if self.p.is_goal(n0.state): # anchor has path to goal
+            print(n0.state.hs)
             return n0.path
           else: # expand anchor
 #            self.cnt+=1
             s = self.h0q.pop()
-            self.expand(n0)
-            self.closed0.append(n0.state)
+            if s.state.qs != n0.state.qs: print("ERE")
+            self.expand(n0,-1)
+            self.closed0.append(n0.state.qs)
+          continue
+        (k,n) = self.hqs[i].top()
+        
+        (k0,n0) = self.h0q.top()
+        if k <= self.w2 * k0:
+          if self.p.is_goal(n.state): # open,i has path to goal
+            print(n.state.hs)
+            return n.path
+          else: # expand open,i
+            if self.verbose:
+              print(str(i)+" expand")
+              print(n.path)
+            s = self.hqs[i].pop()
+            self.expand(n,i)
+            self.closedi.append(n.state.qs)
+        else:
+          if self.p.is_goal(n0.state): # anchor has path to goal
+            print(n0.state.hs)
+            return n0.path
+          else: # expand anchor
+#            self.cnt+=1
+            if self.verbose:
+              print("Expand Anchor")
+              print(n0.path)
+            s = self.h0q.pop()
+            self.expand(n0,-1)
+            self.closed0.append(n0.state.qs)
 
 
 # State stores information for a given problem (Constructor used in respective planner)
@@ -226,11 +259,15 @@ class state:
   nq = None   #number of queens placed
   qs = None   #position of queens placed (by column) (redundant with path...)
   n =  None
-  def __init__(self,nq,qs,n):
+  hs = None
+  def __init__(self,nq,qs,n,hs=[]):
     self.qs = []
+    self.hs = []
     for i in range(nq):
       self.qs.append(qs[i])
+      self.hs.append(hs[i])
     self.qs += [-1]*(n-nq)
+    self.hs += [-1]*(n-nq)
     self.nq = nq
     self.n = n
   def isEq(self,s) : return self.qs == s.qs
@@ -255,16 +292,17 @@ class nqueens:
       print(" ")
 
   def start(self):
-    return state(0,[-1]*self.n,self.n)
+    return state(0,[-1]*self.n,self.n,[])
   
   def is_goal(self,state):
     return state.nq == self.n
     
   def cost(self,s1,s2): return 1 # cost 1 to place queen
     
-  def succ(self,s):
+  def succ(self,s,hi):
     qs = s.qs
     nq = s.nq
+    hs = s.hs
     succ = []
     for i in range(self.n):
       add = True
@@ -273,8 +311,10 @@ class nqueens:
           add = False
           break
       qsP = qs[:]
+      hsP = hs[:]
+      hsP[nq] = hi
       qsP[nq] = i
-      if add: succ.append((state(nq+1,qsP,self.n),i))
+      if add: succ.append((state(nq+1,qsP,self.n,hsP),i))
     return succ
  
  
@@ -284,6 +324,8 @@ def h0(state):
   nq = state.nq
   n = state.n
   return n - nq
+
+def h00(state): return 0
 
 # For test 1 showing case where SMHA worse than IMHA
 def h1(state):
@@ -307,6 +349,18 @@ def h2(state):
   for i in range(2,nq):
     if i > 3: break
     if qs[i] == sol[i]: h+=.2 # stronger decrease
+  return n - nq - h
+  
+def hbad(state):
+  qs = state.qs
+  nq = state.nq
+  n = state.n
+  h = 0
+  sol = [4, 1, 8, 2]
+#  if nq < 2: return n - nq + 1
+  for i in range(2,nq):
+    if i > 3: break
+    if qs[i] == sol[i]: h+=.5 # stronger decrease
   return n - nq - h
   
 # Presentation Heuristics:
@@ -371,25 +425,28 @@ def h_mean_dist_all(state):
     
 def run(name, args):
     n = None
-    t = 0 # Test 
-    optlist, args = getopt.getopt(args, "n:t:")
+    t = 0 # Test
+    verbose = False
+    optlist, args = getopt.getopt(args, "vn:t:")
     for (opt, val) in optlist:
         if opt == '-n':
             n = int(val)
         elif opt == '-t':
             t = int(val)
+        elif opt == '-v':
+            verbose = True
     if t == 0:
       w1 = 1
       w2 = 1
       
       nq = nqueens(n)
-      solve = imha(nq,h0,[h1,h2],w1,w2)
+      solve = imha(nq,h0,[h1,hbad],w1,w2)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
       
       nq = nqueens(n)
-      solve = smha(nq,h0,[h1,h2],w1,w2)
+      solve = smha(nq,h0,[h1,hbad],w1,w2)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
@@ -412,13 +469,13 @@ def run(name, args):
       w2 = 1
       
       nq = nqueens(n)
-      solve = imha(nq,h0,[h_local_dist,h_mean_dist_local],w1,w2)
+      solve = imha(nq,h00,[h_local_dist,h_mean_dist_local],w1,w2)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
       
       nq = nqueens(n)
-      solve = smha(nq,h0,[h_local_dist,h_mean_dist_local],w1,w2)
+      solve = smha(nq,h0,[h_local_dist,h_mean_dist_local],w1,w2,verbose)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
