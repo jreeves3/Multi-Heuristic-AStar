@@ -480,17 +480,17 @@ def run(name, args):
       nq.print(sol)
       print(solve.cnt)
     elif t == 3:
-      w1 = 1
-      w2 = 1
+      w1 = 4
+      w2 = 4
       
       nq = nqueens(n)
-      solve = imha(nq,h0,[h_local_dist,h_open_squares],w1,w2)
+      solve = imha(nq,h01,[h_local_dist,h_open_squares],w1,w2)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
       
       nq = nqueens(n)
-      solve = smha(nq,h0,[h_local_dist,h_open_squares],w1,w2)
+      solve = smha(nq,h01,[h_local_dist,h_open_squares],w1,w2)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
