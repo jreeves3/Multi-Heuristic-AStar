@@ -195,7 +195,7 @@ class smha:
           self.h0q.push_update(PQNode(newS,p_newS,g_newS),key_newS)
           if not newS.qs in self.closedi:
             for i in range(self.nh):
-              if self.key(g_s+1,self.hs[i](newS)) <= self.key(g_s+1,self.h0(newS)) :
+              if self.key(g_s+1,self.hs[i](newS)) <= self.key(g_s+1,self.h0(newS)) * self.w2 :
                 key_newS = self.key(g_s+1,self.hs[i](newS))
                 p_newS = p[:] + [action]
                 self.hqs[i].push_update(PQNode(newS,p_newS,g_newS),key_newS)
@@ -325,7 +325,7 @@ def h0(state):
   n = state.n
   return n - nq
 
-def h00(state): return 0
+def h01(state): return 1
 
 # For test 1 showing case where SMHA worse than IMHA
 def h1(state):
@@ -465,17 +465,17 @@ def run(name, args):
       
     # Additional Tests here... T-2 Shows that SMHA cannot even find a solution
     elif t == 2:
-      w1 = 1
-      w2 = 1
+      w1 = 4
+      w2 = 4
       
       nq = nqueens(n)
-      solve = imha(nq,h00,[h_local_dist,h_mean_dist_local],w1,w2)
+      solve = imha(nq,h01,[h_local_dist,h_mean_dist_local],w1,w2)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
       
       nq = nqueens(n)
-      solve = smha(nq,h0,[h_local_dist,h_mean_dist_local],w1,w2,verbose)
+      solve = smha(nq,h01,[h_local_dist,h_mean_dist_local],w1,w2,verbose)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
