@@ -413,7 +413,7 @@ def h_mean_dist_all(state):
   qs = state.qs
   nq = state.nq
   n = state.n
-  if nq == 1: return n - nq # only 1 queen
+  if nq == 1 or nq == 0: return n - nq # only 1 queen
   dist = 0
   cnt = 0
   for i in range(nq-1):
@@ -491,6 +491,21 @@ def run(name, args):
       
       nq = nqueens(n)
       solve = smha(nq,h01,[h_local_dist,h_open_squares],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+    elif t == 4:
+      w1 = 4
+      w2 = 4
+      
+      nq = nqueens(n)
+      solve = imha(nq,h01,[h_local_dist,h_mean_dist_all],w1,w2)
+      sol = solve.search(nq.start())
+      nq.print(sol)
+      print(solve.cnt)
+      
+      nq = nqueens(n)
+      solve = smha(nq,h01,[h_local_dist,h_mean_dist_all],w1,w2)
       sol = solve.search(nq.start())
       nq.print(sol)
       print(solve.cnt)
